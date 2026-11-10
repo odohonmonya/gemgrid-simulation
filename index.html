@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GemGrid network console: Yola and Jimeta simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EEF1EC; --panel:#FFFFFF; --panel2:#F2F5F1; --line:#DCE2DA; --ink:#0F1C20; --muted:#4E5B5E; --faint:#7C8A86;
+  --sun:#FFC21A; --sun-ink:#1A1400; --sun-text:#8A6300; --alert:#D93A3A; --notice:#1F6FE0; --ack:#1E9A5E; --off:#9AA6A2;
+  --map-filter:none; --edge:#2F4A52; --edge-o:.5; --edge-hot:#0F1C20; --node-body:#FFFFFF; --node-stroke:#6B7A76; --lbl:#0F1C20; --lbl-halo:rgba(255,255,255,.95);
+  --range-fill:rgba(255,194,26,.14); --range-stroke:#C28E00; --tag-bg:#FFFFFF; --tag-fg:#7A5A00; --tag-line:#C28E00; --scale-bg:rgba(255,255,255,.9); --scale-fg:#0F1C20;
+  --banner-bg:rgba(255,255,255,.92); --hold-bg:#FDECEC; --hold-line:#F2B8B8; --hold-ink:#8E1F1F; --pkt-edge:#FFFFFF; --mapbg:#E9E6DF;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0B1417; --panel:#111D21; --panel2:#15242A; --line:#1F3037; --ink:#E6ECEA; --muted:#8FA19C; --faint:#5E706B;
+  --sun:#FFC21A; --sun-ink:#1A1400; --sun-text:#FFC21A; --alert:#F25B5B; --notice:#4C93FF; --ack:#3DBE7F; --off:#56646A;
+  --map-filter:invert(1) hue-rotate(180deg) saturate(.35) brightness(.72) contrast(1.08); --edge:#3B5A63; --edge-o:.8; --edge-hot:#9FB6B0; --node-body:#0B1417; --node-stroke:#5E706B; --lbl:#E6ECEA; --lbl-halo:rgba(11,20,23,.9);
+  --range-fill:rgba(255,194,26,.07); --range-stroke:rgba(255,194,26,.6); --tag-bg:#0B1417; --tag-fg:#FFC21A; --tag-line:#FFC21A; --scale-bg:rgba(11,20,23,.85); --scale-fg:#E6ECEA;
+  --banner-bg:rgba(11,20,23,.88); --hold-bg:#2A1416; --hold-line:#5A2226; --hold-ink:#FFD9D9; --pkt-edge:#0B1417; --mapbg:#0E181B;
+}}
+:root[data-theme="dark"]{
+  --bg:#0B1417; --panel:#111D21; --panel2:#15242A; --line:#1F3037; --ink:#E6ECEA; --muted:#8FA19C; --faint:#5E706B;
+  --sun:#FFC21A; --sun-ink:#1A1400; --sun-text:#FFC21A; --alert:#F25B5B; --notice:#4C93FF; --ack:#3DBE7F; --off:#56646A;
+  --map-filter:invert(1) hue-rotate(180deg) saturate(.35) brightness(.72) contrast(1.08); --edge:#3B5A63; --edge-o:.8; --edge-hot:#9FB6B0; --node-body:#0B1417; --node-stroke:#5E706B; --lbl:#E6ECEA; --lbl-halo:rgba(11,20,23,.9);
+  --range-fill:rgba(255,194,26,.07); --range-stroke:rgba(255,194,26,.6); --tag-bg:#0B1417; --tag-fg:#FFC21A; --tag-line:#FFC21A; --scale-bg:rgba(11,20,23,.85); --scale-fg:#E6ECEA;
+  --banner-bg:rgba(11,20,23,.88); --hold-bg:#2A1416; --hold-line:#5A2226; --hold-ink:#FFD9D9; --pkt-edge:#0B1417; --mapbg:#0E181B;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:'Geist',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.mono{font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand svg{width:30px;height:30px;flex:none}
+.brand b{font-size:19px;font-weight:800;letter-spacing:-.03em}
+.brand span{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--muted);background:var(--panel)}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--ack);display:inline-block}
+.pill.bad i{background:var(--alert)} .pill.bad{color:var(--ink)}
+.pill b{color:var(--ink);font-weight:600}
+
+@media (max-width:640px){.top{flex-wrap:wrap;gap:8px}.brand span{display:none}.status{margin-left:0;width:100%;justify-content:flex-start}}
+/* layout */
+.app{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:14px}
+.mapwrap{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--mapbg)}
+#map{display:block;width:100%;height:auto;touch-action:manipulation}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+@media (min-width:1000px){
+  .app{grid-template-columns:auto minmax(300px,360px) minmax(0,1fr);height:calc(100vh - 55px);align-items:start}
+  .mapwrap{height:calc(100vh - 55px - 28px);aspect-ratio:1165/1780}
+  #map{height:100%;width:auto}
+  .side{max-height:calc(100vh - 55px - 28px);overflow:auto}
+}
+@media (min-width:1000px) and (max-width:1279px){
+  .app{grid-template-columns:auto minmax(0,1fr)}
+  .side.b{grid-column:2}
+}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{margin:0 0 10px;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:9px 12px;font-weight:600;min-height:40px}
+.btn:hover{border-color:#2E4A52}
+.btn.primary{background:var(--sun);border-color:var(--sun);color:var(--sun-ink)}
+.btn.ghost{background:transparent}
+
+/* scenario */
+.steps{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.steps li{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:6px 6px;border-radius:8px;color:var(--faint);font-size:13px}
+.steps li .n{color:inherit;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:11px}
+.steps li.active{background:var(--panel2);color:var(--ink)}
+.steps li.active .n{background:var(--sun);border-color:var(--sun);color:var(--sun-ink);font-weight:700}
+.steps li.done{color:var(--muted)}
+.steps li.done .n{border-color:var(--ack);color:var(--ack)}
+.result{margin-top:10px;font-size:13px;color:var(--ink);display:none;border-top:1px solid var(--line);padding-top:10px}
+.result.show{display:block}
+
+/* node inspector */
+.ntitle{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ntitle .ic{width:34px;height:34px;border-radius:9px;background:var(--panel2);display:grid;place-items:center;color:var(--ink);flex:none}
+.ntitle .ic svg{width:20px;height:20px}
+.ntitle b{display:block;font-size:15px}
+.ntitle small{color:var(--muted)}
+select.sel{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 12px;font-size:13px}
+dl.kv dt{color:var(--muted)} dl.kv dd{margin:0}
+.hold{position:relative;overflow:hidden;background:var(--hold-bg);border-color:var(--hold-line);color:var(--hold-ink)}
+.hold .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--alert);opacity:.35;transition:none}
+.hold span{position:relative}
+.hint{font-size:12px;color:var(--faint);margin:6px 0 0}
+input.txt{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:10px 0 8px}
+
+/* switches */
+.sw{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
+.sw:first-of-type{border-top:0}
+.toggle{width:40px;height:22px;border-radius:999px;background:var(--off);border:0;position:relative;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.toggle[aria-checked="true"]{background:var(--ack)}
+.toggle[aria-checked="true"]::after{left:21px}
+.speed{display:flex;gap:4px}
+.speed button{border:1px solid var(--line);background:transparent;border-radius:6px;padding:4px 8px;font-size:12px;color:var(--muted)}
+.speed button[aria-pressed="true"]{background:var(--panel2);color:var(--ink);border-color:#2E4A52}
+
+/* messages */
+.msg{padding:10px 0;border-top:1px solid var(--line)}
+.msg:first-child{border-top:0;padding-top:0}
+.msg .h{display:flex;align-items:center;gap:8px;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dot.alert{background:var(--alert)} .dot.notice{background:var(--notice)} .dot.ack{background:var(--ack)} .dot.info{background:var(--faint)} .dot.warn{background:var(--sun)}
+.bar{height:4px;background:var(--panel2);border-radius:4px;margin:8px 0 6px;overflow:hidden}
+.bar i{display:block;height:100%;transition:width .3s}
+.msg .meta{font-size:12px;color:var(--muted)}
+.empty{color:var(--faint);font-size:13px;margin:0}
+
+/* log */
+.log{list-style:none;margin:0;padding:0;font-size:12.5px;max-height:360px;overflow:auto}
+.log li{display:grid;grid-template-columns:56px 10px 1fr;gap:8px;align-items:baseline;padding:5px 0;border-top:1px solid var(--line)}
+.log li:first-child{border-top:0}
+.log time{color:var(--faint);font-size:11.5px}
+.log .dot{transform:translateY(-1px)}
+.log li.step{color:var(--sun-text)}
+
+/* map overlays */
+.banner{position:absolute;left:12px;right:12px;top:12px;background:var(--banner-bg);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:600;font-size:14px;display:none}
+.banner.show{display:block}
+.banner small{display:block;color:var(--sun-text);font-weight:600;font-size:11.5px;margin-bottom:2px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin:-2px 0 12px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.foot{padding:0 16px 16px;color:var(--faint);font-size:12px}
+.foot a{color:inherit}
+
+/* svg */
+.basemap{filter:var(--map-filter)}
+.edge{stroke:var(--edge);stroke-width:3;opacity:var(--edge-o)}
+.edge.off{stroke-dasharray:6 10;opacity:.35}
+.edge.hot{stroke:var(--edge-hot);opacity:1}
+.range{fill:var(--range-fill);stroke:var(--range-stroke);stroke-width:2.5;stroke-dasharray:4 10}
+.node{cursor:pointer;color:var(--lbl)}
+.node .hit{fill:transparent} .node .halo{fill:none}
+.node .body{fill:var(--node-body);stroke:var(--node-stroke);stroke-width:4}
+.node.got-notice .body{stroke:var(--notice);stroke-width:5}
+.node.got-alert .body{stroke:var(--alert);stroke-width:6}
+.node.selected .halo{fill:none;stroke:var(--range-stroke);stroke-width:3.5;stroke-dasharray:5 6}
+.node.offline{color:var(--off)}
+.node.offline .body{stroke:var(--off);stroke-dasharray:6 6}
+.node .ico{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lbl{font:600 24px 'Geist',system-ui,sans-serif;fill:var(--lbl);paint-order:stroke;stroke:var(--lbl-halo);stroke-width:7px;stroke-linejoin:round}
+.lbl.off{fill:var(--muted)}
+.tag rect{fill:var(--tag-bg);stroke:var(--tag-line);stroke-width:2}
+.tag text{font:600 18px 'Geist',system-ui,sans-serif;fill:var(--tag-fg)}
+.pkt{stroke:var(--pkt-edge);stroke-width:3}
+.pkt.alert{fill:var(--alert);filter:drop-shadow(0 0 5px rgba(217,58,58,.7))}
+.pkt.notice{fill:var(--notice);filter:drop-shadow(0 0 5px rgba(31,111,224,.7))}
+.pkt.ack{fill:var(--ack);filter:drop-shadow(0 0 5px rgba(30,154,94,.7))}
+.ring{fill:none;stroke-width:4;transform-box:fill-box;transform-origin:center;animation:ring 1s ease-out forwards}
+.ring.alert{stroke:var(--alert)} .ring.notice{stroke:var(--notice)} .ring.ack{stroke:var(--ack)}
+@keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(3.2);opacity:0}}
+.mtext{font:500 18px 'Geist',system-ui,sans-serif;fill:var(--scale-fg)}
+.scl{stroke:var(--scale-fg)} .sclbg{fill:var(--scale-bg)}
+@media (prefers-reduced-motion:reduce){.ring{animation:none;opacity:0}}
+
+/* presentation mode, for screen recording */
+body.present .top .status,body.present #nodeCard,body.present #condCard,body.present .foot{display:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 80 80" aria-hidden="true"><rect x="2" y="2" width="76" height="76" rx="22" fill="#172A30"/><path d="M14 50 A26 26 0 0 1 66 50" fill="none" stroke="#F4F6F2" stroke-width="5" stroke-linecap="round"/><path d="M22 50 A18 18 0 0 1 58 50" fill="none" stroke="#F4F6F2" stroke-width="5" stroke-linecap="round"/><path d="M29 50 A11 11 0 0 1 51 50 Z" fill="#FFC21A"/><line x1="12" y1="56" x2="68" y2="56" stroke="#FFC21A" stroke-width="5" stroke-linecap="round"/></svg>
+    <b>gemgrid</b><span>Network console, Yola and Jimeta (simulation)</span>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+</header>
+
+<main class="app">
+  <div class="mapwrap">
+    <svg id="map" viewBox="0 0 1165 1780" role="img" aria-label="Map of Yola and Jimeta with GemGrid nodes">
+      <image class="basemap" href="assets/yola-map.jpg" x="0" y="0" width="1165" height="1780" preserveAspectRatio="none"/>
+      <g id="gOver"></g><g id="gEdges"></g><g id="gRange"></g><g id="gFx"></g><g id="gNodes"></g><g id="gPkts"></g>
+    </svg>
+    <div class="banner" id="banner"><small id="bannerStep"></small><span id="bannerText"></span></div>
+  </div>
+
+  <div class="side a">
+    <section class="card" aria-labelledby="scH">
+      <h2 id="scH">Scenario</h2>
+      <div class="row">
+        <button class="btn primary" id="btnDemo">Run guided demo</button>
+        <button class="btn ghost" id="btnPause" style="flex:0 0 92px">Pause</button>
+      </div>
+      <ol class="steps" id="steps"></ol>
+      <div class="result" id="result"></div>
+    </section>
+
+    <section class="card" id="nodeCard" aria-labelledby="ndH">
+      <h2 id="ndH">Node</h2>
+      <select class="sel" id="nodeSel" aria-label="Selected node"></select>
+      <div class="ntitle"><div class="ic" id="nIcon"></div><div><b id="nName"></b><small id="nType"></small></div></div>
+      <dl class="kv" id="nKv"></dl>
+      <button class="btn hold" id="btnHold" style="width:100%"><i class="fill" id="holdFill"></i><span>Hold to raise alert</span></button>
+      <p class="hint">Hold for about a second, like the guarded button on a real node.</p>
+      <input class="txt" id="noticeText" maxlength="80" value="Water distribution tomorrow, 10:00 at the ward office." aria-label="Community notice text">
+      <div class="row">
+        <button class="btn" id="btnNotice">Send notice</button>
+        <button class="btn ghost" id="btnPower">Power off</button>
+      </div>
+    </section>
+
+    <section class="card" id="condCard" aria-labelledby="cdH">
+      <h2 id="cdH">Conditions</h2>
+      <div class="sw"><span>Grid power</span><button class="toggle" id="tgGrid" role="switch" aria-checked="true" aria-label="Grid power"></button></div>
+      <div class="sw"><span>Internet at gateway</span><button class="toggle" id="tgNet" role="switch" aria-checked="true" aria-label="Internet at gateway"></button></div>
+      <div class="sw"><span>Speed</span><div class="speed" id="speed"><button data-v="0.5">0.5×</button><button data-v="1" aria-pressed="true">1×</button><button data-v="2">2×</button><button data-v="4">4×</button></div></div>
+      <div class="sw"><span>Dark map</span><button class="toggle" id="tgDark" role="switch" aria-checked="false" aria-label="Dark map"></button></div>
+      <div class="sw"><span>Presentation mode</span><button class="toggle" id="tgPresent" role="switch" aria-checked="false" aria-label="Presentation mode"></button></div>
+      <div class="sw"><span>Reset network</span><button class="btn ghost" id="btnReset" style="min-height:32px;padding:4px 12px">Reset</button></div>
+    </section>
+  </div>
+
+  <div class="side b">
+    <section class="card" aria-labelledby="msH">
+      <h2 id="msH">Messages</h2>
+      <div class="legend"><span><i class="dot alert"></i>Alert</span><span><i class="dot notice"></i>Notice</span><span><i class="dot ack"></i>Acknowledgement</span><span><i class="dot" style="background:var(--off)"></i>Offline</span></div>
+      <div id="msgs"></div>
+    </section>
+    <section class="card" aria-labelledby="lgH">
+      <h2 id="lgH">Event log</h2>
+      <ul class="log" id="log" aria-live="polite"></ul>
+    </section>
+  </div>
+</main>
+<p class="foot">Software simulation. Radio range (2.5 km) and hop timing (about 1.2 s) are assumptions, not field measurements. AUN, FCE Yola, Jimeta, Yola town, the ridge and the Benue floodplain follow the map; the ward office, vigilante post, shops and farm sites are placeholders. Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, tile style CyclOSM.</p>
+
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const Z=13, CLAT=9.22474, CLON=12.48528, DPR=3, OX=0, OY=485, CX=645, CY=1421;
+const WORLD=256*Math.pow(2,Z);
+const PX_PER_KM=1000/(156543.03392*Math.cos(CLAT*Math.PI/180)/Math.pow(2,Z))*DPR;
+const RANGE_KM=2.5, RANGE=RANGE_KM*PX_PER_KM, HOP=1.2, ACK_DELAY=2.0;
+function mercY(lat){const s=Math.sin(lat*Math.PI/180);return (0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*WORLD}
+const CYM=mercY(CLAT);
+function toLatLon(x,y){const sx=x+OX,sy=y+OY;const lon=CLON+((sx-CX)/DPR)/WORLD*360;const my=CYM+(sy-CY)/DPR;const n=Math.PI-2*Math.PI*my/WORLD;return [180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))),lon]}
+
+const ICONS={
+ home:'M4 11 12 4l8 7M6 10v10h12V10M10 20v-5h4v5',
+ school:'M2 9l10-5 10 5-10 5-10-5zM6 11v5c3 2 9 2 12 0v-5',
+ shield:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3zM9 12l2 2 4-4',
+ ward:'M3 21h18M4 10h16M12 3 3 8h18L12 3zM6 10v8M10 10v8M14 10v8M18 10v8',
+ market:'M4 9h16l-1.5-5h-13L4 9zM5 9v11h14V9M9 20v-6h6v6',
+ relay:'M12 8v13M9 21l3-9 3 9M8.5 6.5a5 5 0 0 1 7 0M6 4a8.5 8.5 0 0 1 12 0',
+ gateway:'M4 14h16v6H4zM8 17h1M12 11a4 4 0 0 1 4 0M9 8a8 8 0 0 1 6 0',
+ farm:'M5 19c0-8 5-14 14-14 0 9-6 14-14 14zM5 19l7-7'
+};
+const TYPE_LABEL={home:'Household node',school:'School node',shield:'Responder node, security',ward:'Responder node, community leader',market:'Business node',relay:'Relay node on high ground',gateway:'Gateway, solar with 4G',farm:'Farm node'};
+const NODES=[
+  {id:'gw',name:'AUN campus gateway',short:'AUN gateway',x:915,y:1540,icon:'gateway',type:'gateway'},
+  {id:'abuja',name:'Shops on Abuja Road',short:'Abuja Rd shops',x:860,y:1300,icon:'market'},
+  {id:'eastY',name:'Homes, east Yola',short:'East Yola',x:1080,y:1400,icon:'home'},
+  {id:'yolaC',name:"Ward Head's office, Yola town",short:'Ward Head',x:600,y:1120,icon:'ward',responder:true},
+  {id:'vig',name:'Vigilante post, Yola',short:'Vigilante post',x:560,y:1400,icon:'shield',responder:true},
+  {id:'homeS',name:'Homes, south Yola',short:'South Yola',x:460,y:1640,icon:'home'},
+  {id:'west',name:'Homes, west Yola',short:'West Yola',x:340,y:1200,icon:'home'},
+  {id:'road',name:'Homes on the Jimeta road',short:'Jimeta road',x:170,y:870,icon:'home'},
+  {id:'fce',name:'Federal College of Education',short:'FCE Yola',x:240,y:500,icon:'school'},
+  {id:'jimeta',name:'Homes, Jimeta',short:'Jimeta',x:80,y:180,icon:'home'},
+  {id:'relay',name:'Relay on the ridge',short:'Ridge relay',x:480,y:320,icon:'relay'},
+  {id:'farm1',name:'Farms on the Benue floodplain',short:'Floodplain farms',x:660,y:600,icon:'farm'},
+  {id:'farm2',name:'Riverside farms',short:'Riverside farms',x:880,y:800,icon:'farm'}
+];
+const N=NODES.length;
+const dpx=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y), km=(a,b)=>dpx(a,b)/PX_PER_KM;
+const NB={};NODES.forEach(a=>{NB[a.id]=NODES.filter(b=>b.id!==a.id&&dpx(a,b)<=RANGE).map(b=>b.id)});
+const $=id=>document.getElementById(id);
+const gOver=$('gOver'),gEdges=$('gEdges'),gRange=$('gRange'),gFx=$('gFx'),gNodes=$('gNodes'),gPkts=$('gPkts');
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function iconSvg(name){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="'+ICONS[name]+'"/></svg>'}
+
+const STEPS=['Grid power and internet go down','The Ward Head sends a community notice','The ridge relay loses power','Emergency button pressed in south Yola','The ridge relay comes back','Internet returns at the AUN gateway'];
+let S,selected='homeS',speed=1,paused=false,demoToken=0,stepIdx=-1;
+
+function fresh(){const nodes={};NODES.forEach(n=>{nodes[n.id]=Object.assign({},n,{online:true,seen:new Map(),last:null})});return {t:0,nodes,msgs:new Map(),inflight:[],events:[],waiters:[],internet:true,grid:true,synced:new Set(),counter:0}}
+const node=id=>S.nodes[id];
+const label=m=>m.type==='alert'?'Emergency alert':m.type==='notice'?'Community notice':'Acknowledgement';
+function log(text,kind){const li=document.createElement('li');if(kind==='step')li.className='step';li.innerHTML='<time class="mono">'+S.t.toFixed(1)+'s</time><i class="dot '+(kind==='step'?'warn':kind||'info')+'"></i><span></span>';li.lastChild.textContent=text;const ul=$('log');ul.insertBefore(li,ul.firstChild);while(ul.children.length>200)ul.removeChild(ul.lastChild)}
+function schedule(t,fn){S.events.push({t,fn})}
+function waitSim(s){return new Promise(r=>S.waiters.push({t:S.t+s,res:r}))}
+function fx(id,type){const n=node(id);const c=el('circle',{cx:n.x,cy:n.y,r:26,class:'ring '+type},gFx);setTimeout(()=>c.remove(),1050)}
+
+function send(type,origin,text){
+  const n=node(origin);
+  if(!n.online){log(n.name+' is powered off and cannot send.','warn');return null}
+  const id='M'+(++S.counter);S.msgs.set(id,{id,type,origin,text,created:S.t,acks:[]});
+  log(type==='alert'?'Emergency button pressed at '+n.name+'.':n.name+' sent a notice: "'+text+'"',type);
+  deliver(origin,id,null);return id;
+}
+function deliver(id,mid,from){
+  const n=node(id);if(n.seen.has(mid))return;
+  const m=S.msgs.get(mid);const hops=from?node(from).seen.get(mid).hops+1:0;
+  n.seen.set(mid,{t:S.t,hops,from});
+  if(m.type!=='ack'){n.last=m.type;fx(id,m.type);if(from)log(label(m)+' reached '+n.name+', hop '+hops+', '+km(node(from),n).toFixed(1)+' km from '+node(from).short+'.',m.type)}
+  else if(id===m.target){const a=S.msgs.get(m.ref);if(a.acks.indexOf(m.origin)<0)a.acks.push(m.origin);fx(id,'ack');log(n.name+' received acknowledgement from '+node(m.origin).name+', '+(S.t-a.created).toFixed(1)+'s after the alert.','ack')}
+  if(n.type==='gateway'&&m.type!=='ack'){if(S.internet&&n.online)sync(mid);else if(!S.synced.has(mid))log('Internet is down. The gateway is holding this message for the dashboard.','warn')}
+  if(m.type==='alert'&&n.responder&&id!==m.origin){schedule(S.t+ACK_DELAY,()=>{if(!node(id).online)return;log(n.name+' acknowledged the alert.','ack');const aid='M'+(++S.counter);S.msgs.set(aid,{id:aid,type:'ack',origin:id,target:m.origin,ref:mid,created:S.t});deliver(id,aid,null)})}
+  offerAll(id);render();
+}
+function offerAll(a){if(!node(a).online)return;NB[a].forEach(b=>offer(a,b))}
+function offer(a,b){const A=node(a),B=node(b);if(!A.online||!B.online)return;A.seen.forEach((_,mid)=>{if(!B.seen.has(mid))transmit(a,b,mid)})}
+function transmit(a,b,mid){if(S.inflight.some(t=>t.mid===mid&&t.to===b))return;const m=S.msgs.get(mid),A=node(a);const tr={mid,from:a,to:b,start:S.t,end:S.t+HOP,type:m.type};tr.el=el('circle',{cx:A.x,cy:A.y,r:11,class:'pkt '+m.type},gPkts);S.inflight.push(tr)}
+function sync(mid){if(S.synced.has(mid))return;S.synced.add(mid);const m=S.msgs.get(mid);log('Gateway synced the '+label(m).toLowerCase()+' from '+node(m.origin).name+' to the dashboard.','info')}
+function syncAll(){const g=node('gw');if(!g.online||!S.internet)return;g.seen.forEach((_,mid)=>{if(S.msgs.get(mid).type!=='ack')sync(mid)})}
+function setOnline(id,v){const n=node(id);if(n.online===v)return;n.online=v;
+  if(!v){S.inflight=S.inflight.filter(t=>{if(t.to===id||t.from===id){t.el.remove();return false}return true});log(n.name+' lost power. Neighbours will hold messages for it.','warn')}
+  else{log(n.name+' is back online and exchanging message summaries with neighbours.','info');NB[id].forEach(b=>{offer(id,b);offer(b,id)});if(n.type==='gateway')syncAll()}
+  render()}
+function setGrid(v){if(S.grid===v)return;S.grid=v;log(v?'Grid power restored.':'Grid power cut. Every node keeps running on solar and battery.',v?'info':'warn');render()}
+function setNet(v){if(S.internet===v)return;S.internet=v;log(v?'Internet restored at the gateway.':'Internet cut. Nodes keep relaying locally.',v?'info':'warn');if(v)syncAll();render()}
+function held(id){const A=node(id);if(!A.online)return 0;let c=0;A.seen.forEach((_,mid)=>{if(S.msgs.get(mid).type==='ack')return;if(NB[id].some(b=>!node(b).online&&!node(b).seen.has(mid)))c++});return c}
+function queued(){let c=0;node('gw').seen.forEach((_,mid)=>{if(S.msgs.get(mid).type!=='ack'&&!S.synced.has(mid))c++});return c}
+
+function drawOverlay(){
+  gOver.innerHTML='';const x0=36,y0=1735,len=PX_PER_KM;
+  el('rect',{x:x0-12,y:y0-40,width:len+24,height:58,rx:8,class:'sclbg'},gOver);
+  el('line',{x1:x0,y1:y0,x2:x0+len,y2:y0,class:'scl','stroke-width':4},gOver);
+  el('line',{x1:x0,y1:y0-10,x2:x0,y2:y0+6,class:'scl','stroke-width':4},gOver);
+  el('line',{x1:x0+len,y1:y0-10,x2:x0+len,y2:y0+6,class:'scl','stroke-width':4},gOver);
+  const t=el('text',{x:x0+len/2,y:y0-14,'text-anchor':'middle',class:'mtext'},gOver);t.textContent='1 km';
+}
+function tag(g,x,y,text){const b=el('g',{class:'tag',transform:'translate('+x+','+y+')'},g);const w=text.length*10+22;el('rect',{x:0,y:-17,width:w,height:30,rx:15},b);const t=el('text',{x:w/2,y:4,'text-anchor':'middle'},b);t.textContent=text}
+function render(){
+  gEdges.innerHTML='';gRange.innerHTML='';gNodes.innerHTML='';
+  const done=new Set();
+  NODES.forEach(a=>NB[a.id].forEach(b=>{const k=[a.id,b].sort().join('|');if(done.has(k))return;done.add(k);const B=node(b);const off=!node(a.id).online||!B.online;const hot=S.inflight.some(t=>(t.from===a.id&&t.to===b)||(t.from===b&&t.to===a.id));el('line',{x1:a.x,y1:a.y,x2:B.x,y2:B.y,class:'edge'+(off?' off':'')+(hot?' hot':'')},gEdges)}));
+  const s=node(selected);el('circle',{cx:s.x,cy:s.y,r:RANGE,class:'range'},gRange);
+  NODES.forEach(d=>{
+    const n=node(d.id);let cls='node';if(!n.online)cls+=' offline';if(d.id===selected)cls+=' selected';if(n.last)cls+=' got-'+n.last;
+    const g=el('g',{class:cls,transform:'translate('+d.x+','+d.y+')',tabindex:0,role:'button','aria-label':d.name+(n.online?'':', powered off')},gNodes);
+    el('circle',{r:52,class:'hit'},g);el('circle',{r:36,class:'halo'},g);el('circle',{r:27,class:'body'},g);
+    const ic=el('path',{d:ICONS[d.icon],class:'ico',transform:'translate(-15.6,-15.6) scale(1.3)'},g);
+    const lb=el('text',{class:'lbl'+(n.online?'':' off'),'text-anchor':'middle',y:58},g);lb.textContent=d.short+(n.online?'':', off');
+    const h=held(d.id);if(h)tag(g,32,-34,h+' held');
+    if(d.type==='gateway'){const q=queued();if(q)tag(g,-130,-34,q+' queued')}
+    g.addEventListener('click',()=>select(d.id));
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(d.id)}});
+  });
+  renderSide();
+}
+function renderSide(){
+  const n=node(selected);$('nodeSel').value=selected;
+  $('nIcon').innerHTML=iconSvg(n.icon);$('nName').textContent=n.name;$('nType').textContent=(TYPE_LABEL[n.icon]||'')+(n.online?'':', powered off');
+  const ll=toLatLon(n.x,n.y);
+  const kv=[['Position',ll[0].toFixed(4)+'° N, '+ll[1].toFixed(4)+'° E'],['Status',n.online?'Online, solar and battery':'Powered off'],['In range',NB[selected].map(b=>node(b).short+' '+km(n,node(b)).toFixed(1)+' km').join(', ')||'No other node'],['Holding',held(selected)+' message'+(held(selected)===1?'':'s')+' for offline neighbours']];
+  $('nKv').innerHTML='';kv.forEach(([k,v])=>{const dt=document.createElement('dt');dt.textContent=k;const dd=document.createElement('dd');dd.textContent=v;$('nKv').append(dt,dd)});
+  $('btnPower').textContent=n.online?'Power off':'Power on';
+  $('tgGrid').setAttribute('aria-checked',S.grid);$('tgNet').setAttribute('aria-checked',S.internet);
+  $('btnPause').textContent=paused?'Resume':'Pause';
+  const on=NODES.filter(d=>node(d.id).online).length;
+  $('status').innerHTML='<span class="pill"><i></i>Nodes <b>'+on+'/'+N+'</b></span>'+
+    '<span class="pill'+(S.grid?'':' bad')+'"><i></i>Grid <b>'+(S.grid?'on':'off')+'</b></span>'+
+    '<span class="pill'+(S.internet?'':' bad')+'"><i></i>Internet <b>'+(S.internet?'on':'off')+'</b></span>'+
+    '<span class="pill mono">T+<b id="clock">'+S.t.toFixed(1)+'</b>s</span>';
+  const list=[...S.msgs.values()].filter(m=>m.type!=='ack').reverse();const box=$('msgs');box.innerHTML='';
+  if(!list.length){box.innerHTML='<p class="empty">No messages yet. Run the guided demo, or hold the alert button on any node.</p>'}
+  list.forEach(m=>{let r=0,mh=0,lt=0;NODES.forEach(d=>{const x=node(d.id).seen.get(m.id);if(x){r++;mh=Math.max(mh,x.hops);lt=Math.max(lt,x.t)}});
+    const col=m.type==='alert'?'var(--alert)':'var(--notice)';
+    const d=document.createElement('div');d.className='msg';
+    d.innerHTML='<div class="h"><i class="dot '+m.type+'"></i><span></span></div><div class="bar"><i style="width:'+(r/N*100)+'%;background:'+col+'"></i></div><div class="meta"></div>';
+    d.querySelector('.h span').textContent=label(m)+', from '+node(m.origin).short;
+    let meta=r+' of '+N+' nodes, up to '+mh+' hops'+(r===N?', complete in '+(lt-m.created).toFixed(1)+'s':'');
+    if(m.type==='alert')meta+='. '+(m.acks.length?'Acknowledged by '+m.acks.map(a=>node(a).short).join(' and '):'Awaiting acknowledgement');
+    meta+='. '+(S.synced.has(m.id)?'On dashboard':'Not yet on dashboard')+'.';
+    d.querySelector('.meta').textContent=meta;box.appendChild(d)});
+  renderSteps();
+}
+function renderSteps(){const ol=$('steps');ol.innerHTML='';STEPS.forEach((t,i)=>{const li=document.createElement('li');li.className=i<stepIdx?'done':i===stepIdx?'active':'';li.innerHTML='<span class="n mono">'+(i+1)+'</span><span></span>';li.lastChild.textContent=t;ol.appendChild(li)})}
+function select(id){selected=id;render()}
+
+function process(){
+  if(S.events.length){S.events.sort((a,b)=>a.t-b.t);while(S.events.length&&S.events[0].t<=S.t)S.events.shift().fn()}
+  const arr=S.inflight.filter(t=>S.t>=t.end);
+  if(arr.length){S.inflight=S.inflight.filter(t=>S.t<t.end);arr.forEach(t=>{t.el.remove();if(node(t.to).online&&node(t.from).online)deliver(t.to,t.mid,t.from)});render()}
+  if(S.waiters.length)S.waiters=S.waiters.filter(w=>{if(S.t>=w.t){w.res();return false}return true});
+}
+function drawPkts(){S.inflight.forEach(t=>{const a=node(t.from),b=node(t.to);const p=Math.min(1,Math.max(0,(S.t-t.start)/(t.end-t.start)));t.el.setAttribute('cx',a.x+(b.x-a.x)*p);t.el.setAttribute('cy',a.y+(b.y-a.y)*p)})}
+let last=performance.now(),lastEdge=0;
+function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;if(!paused){S.t+=dt*speed;process()}drawPkts();
+  if(now-lastEdge>200){lastEdge=now;gEdges.querySelectorAll('.edge').forEach(()=>{});}
+  const c=$('clock');if(c)c.textContent=S.t.toFixed(1);requestAnimationFrame(frame)}
+
+function banner(step,text){const b=$('banner');if(text===null){b.classList.remove('show');return}$('bannerStep').textContent=step;$('bannerText').textContent=text;b.classList.add('show')}
+async function runDemo(){
+  reset();const tok=++demoToken;paused=false;
+  const texts=['Grid power and internet go down across Yola. Every node keeps running on solar and battery.','The Ward Head in Yola town sends a community notice to the whole network.','The relay on the ridge loses power, cutting off the floodplain farms.','Someone in south Yola presses the emergency button.','The ridge relay comes back. Its neighbours pass on the alert they were holding.','Internet returns at the AUN gateway. Held messages sync to the dashboard.'];
+  const acts=[()=>{setGrid(false);setNet(false)},()=>{select('yolaC');send('notice','yolaC',$('noticeText').value||'Community meeting today.')},()=>{select('relay');setOnline('relay',false)},()=>{select('homeS');send('alert','homeS','Emergency in south Yola')},()=>{select('relay');setOnline('relay',true)},()=>{select('gw');setNet(true)}];
+  const waits=[2.5,9,2.5,10.5,6,3];
+  try{for(let i=0;i<6;i++){if(tok!==demoToken)return;stepIdx=i;banner('Step '+(i+1)+' of 6',texts[i]);log('Step '+(i+1)+': '+texts[i],'step');acts[i]();renderSteps();await waitSim(waits[i]);if(tok!==demoToken)return}
+    stepIdx=6;renderSteps();
+    const a=[...S.msgs.values()].find(m=>m.type==='alert');let r=0;NODES.forEach(d=>{if(node(d.id).seen.has(a.id))r++});
+    const txt='The alert reached '+r+' of '+N+' nodes with no grid power, no internet and one failed relay, and '+a.acks.length+' responders acknowledged it.';
+    banner('Demo complete',txt);$('result').textContent=txt;$('result').classList.add('show');
+  }catch(e){}
+}
+function reset(){demoToken++;stepIdx=-1;if(S)S.inflight.forEach(t=>t.el.remove());gFx.innerHTML='';gPkts.innerHTML='';S=fresh();$('log').innerHTML='';banner(null,null);$('result').classList.remove('show');log('Network ready: '+N+' solar nodes across Yola and Jimeta.','info');render()}
+
+/* hold-to-alert */
+let holdT=null,holdStart=0;const HOLD_MS=1000;
+function holdTick(){const p=Math.min(1,(performance.now()-holdStart)/HOLD_MS);$('holdFill').style.width=(p*100)+'%';if(p>=1){endHold(true)}else holdT=requestAnimationFrame(holdTick)}
+function startHold(e){if(e)e.preventDefault();if(holdT)return;holdStart=performance.now();holdT=requestAnimationFrame(holdTick)}
+function endHold(fire){if(holdT)cancelAnimationFrame(holdT);holdT=null;$('holdFill').style.width='0';if(fire===true)send('alert',selected,'Emergency')}
+const hb=$('btnHold');
+hb.addEventListener('pointerdown',startHold);['pointerup','pointerleave','pointercancel'].forEach(ev=>hb.addEventListener(ev,()=>endHold(false)));
+hb.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.repeat)startHold(e)});hb.addEventListener('keyup',()=>endHold(false));
+
+const sel=$('nodeSel');NODES.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;sel.appendChild(o)});
+sel.addEventListener('change',()=>select(sel.value));
+$('btnNotice').addEventListener('click',()=>{const t=$('noticeText').value.trim();if(t)send('notice',selected,t)});
+$('btnPower').addEventListener('click',()=>setOnline(selected,!node(selected).online));
+$('tgGrid').addEventListener('click',()=>setGrid(!S.grid));
+$('tgNet').addEventListener('click',()=>setNet(!S.internet));
+$('tgPresent').addEventListener('click',e=>{const on=e.currentTarget.getAttribute('aria-checked')!=='true';e.currentTarget.setAttribute('aria-checked',on);document.body.classList.toggle('present',on)});
+$('btnPause').addEventListener('click',()=>{paused=!paused;renderSide()});
+$('btnReset').addEventListener('click',reset);
+$('btnDemo').addEventListener('click',runDemo);
+$('speed').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;speed=parseFloat(b.dataset.v);[...$('speed').children].forEach(x=>x.setAttribute('aria-pressed',x===b))});
+function setTheme(dark){document.documentElement.setAttribute('data-theme',dark?'dark':'light');$('tgDark').setAttribute('aria-checked',dark);try{localStorage.setItem('gg-theme',dark?'dark':'light')}catch(e){}}
+$('tgDark').addEventListener('click',()=>setTheme(document.documentElement.getAttribute('data-theme')!=='dark'));
+const H=location.hash;let pref=null;try{pref=localStorage.getItem('gg-theme')}catch(e){}
+if(H.includes('dark'))setTheme(true);else if(H.includes('light'))setTheme(false);else setTheme(pref==='dark');
+if(H.includes('present')){document.body.classList.add('present');$('tgPresent').setAttribute('aria-checked','true')}
+drawOverlay();reset();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
