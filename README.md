@@ -4,7 +4,7 @@ A browser-based simulation of GemGrid, a solar-powered offline early-warning net
 
 Built with plain HTML, CSS and JavaScript. No frameworks, no build step and no server code.
 
-**Live demo:** _add your Vercel link here_
+**Live demo:** [gemgrid-simulation.vercel.app](https://gemgrid-simulation.vercel.app)
 
 ## What's in this repository
 
